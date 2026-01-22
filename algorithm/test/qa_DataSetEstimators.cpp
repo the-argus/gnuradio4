@@ -40,12 +40,12 @@ const boost::ut::suite<"DataSet<T> visual test functions"> _DataSetTestFcuntions
         expect(dsCheck.has_value()) << [&] { return std::format("unexpected: {}", dsCheck.error()); } << fatal;
 
         gr::DataSet<T> ds1 = generate::triangular<double>("triagonal - odd", 11);
-        std::println("\"{:20}\": {}", ds1.signalName(0UZ), ds1.signal_values);
+        std::println("\"{:20}\": {}", std::string_view{ds1.signalName(0UZ)}, ds1.signal_values);
         expect(eq(ds1.signalValues().front(), ds1.signalValues().back()));
         expect(eq(ds1.signalValues()[5UZ], 1.0));
 
         gr::DataSet<T> ds2 = generate::triangular<double>("triagonal - even", 10);
-        std::println("\"{:20}\": {}", ds2.signalName(0UZ), ds2.signal_values);
+        std::println("\"{:20}\": {}", std::string_view{ds2.signalName(0UZ)}, ds2.signal_values);
         expect(eq(ds2.signalValues().front(), ds2.signalValues().back()));
         expect(eq(ds2.signalValues()[4UZ], ds2.signalValues()[5UZ]));
     };

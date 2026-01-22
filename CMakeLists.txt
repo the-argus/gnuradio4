@@ -358,8 +358,8 @@ FetchContent_Declare(
 
 FetchContent_Declare(
   vir-simd
-  GIT_REPOSITORY https://github.com/mattkretz/vir-simd.git
-  GIT_TAG v0.4.4)
+  GIT_REPOSITORY https://github.com/the-argus/vir-simd.git
+  GIT_TAG 0a038e030fbcbb618ceee5cd465c6fc9160285af) # fix reflection of structs containing gr::Tensor<T, std::dynamic_extent...>
 
 FetchContent_Declare(
   cpp-httplib

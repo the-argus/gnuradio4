@@ -41,20 +41,19 @@ requires std::convertible_to<std::ranges::range_value_t<RangeValues>, TValue> &&
     }
     const auto     count = values.size();
     gr::DataSet<T> ds;
-    ds.signal_names      = {std::move(name)};
+    ds.signal_names      = {std::pmr::string(std::move(name))};
     ds.signal_quantities = {"Amplitude"};
     ds.signal_units      = {""};
     ds.axis_names        = {"Index"};
     ds.axis_units        = {""};
-    ds.axis_values.resize(1);
-    ds.axis_values[0].resize(count);
-    ds.signal_values.resize(count);
-    ds.meta_information.resize(1);
-    ds.timing_events.resize(1);
+    ds.axis_values.resize({1, count});
+    ds.signal_values.resize({count});
+    ds.meta_information.resize({1});
+    ds.timing_events.resize({1});
     ds.extents = {static_cast<std::int32_t>(count)};
 
     for (std::size_t i = 0; i < count; ++i) {
-        ds.axis_values[0][i] = static_cast<TValue>(i);
+        ds.axis_values[0, i] = static_cast<TValue>(i);
     }
 
     const TValue defaultUnc = TValue(0);
@@ -75,20 +74,19 @@ template<typename T, typename TValue = gr::meta::fundamental_base_value_type_t<T
 [[nodiscard]] constexpr gr::DataSet<T> triangular(std::string name, std::size_t count, TValue offset = 0, TValue amplitude = 1) {
     assert(count > 2UZ);
     gr::DataSet<T> ds;
-    ds.signal_names      = {name};
+    ds.signal_names      = {std::pmr::string{name}};
     ds.signal_quantities = {"Amplitude"};
     ds.signal_units      = {""};
     ds.axis_names        = {"Time"};
     ds.axis_units        = {"s"};
-    ds.axis_values.resize(1UZ); // one X-axis
-    ds.axis_values[gr::dataset::dim::X].resize(count);
-    ds.signal_values.resize(count);
-    ds.meta_information.resize(1UZ);
-    ds.timing_events.resize(1UZ);
+    ds.axis_values.resize({1UZ, count});
+    ds.signal_values.resize({count});
+    ds.meta_information.resize({1UZ});
+    ds.timing_events.resize({1UZ});
     ds.extents = {static_cast<std::int32_t>(count)};
 
     for (std::size_t i = 0UZ; i < count; ++i) {
-        ds.axis_values[0][i] = static_cast<TValue>(i);
+        ds.axis_values[0, i] = static_cast<TValue>(i);
     }
 
     std::size_t midpointLeft = count / 2;
@@ -108,20 +106,19 @@ template<typename T, typename TValue = gr::meta::fundamental_base_value_type_t<T
 template<typename T, typename TValue = gr::meta::fundamental_base_value_type_t<T>>
 [[nodiscard]] constexpr gr::DataSet<T> ramp(std::string name, std::size_t count, TValue offset = TValue(0), TValue amplitude = TValue(1)) {
     gr::DataSet<T> ds;
-    ds.signal_names      = {name};
+    ds.signal_names      = {std::pmr::string{name}};
     ds.signal_quantities = {"Amplitude"};
     ds.signal_units      = {""};
     ds.axis_names        = {"Time"};
     ds.axis_units        = {"s"};
-    ds.axis_values.resize(1);
-    ds.axis_values[0].resize(count);
-    ds.signal_values.resize(count);
-    ds.meta_information.resize(1UZ);
-    ds.timing_events.resize(1UZ);
+    ds.axis_values.resize({1, count});
+    ds.signal_values.resize({count});
+    ds.meta_information.resize({1UZ});
+    ds.timing_events.resize({1UZ});
     ds.extents = {static_cast<std::int32_t>(count)};
 
     for (std::size_t i = 0; i < count; i++) {
-        ds.axis_values[0][i] = gr::cast<T>(i);
+        ds.axis_values[0, i] = gr::cast<T>(i);
         TValue value         = offset + amplitude * gr::cast<TValue>(gr::cast<TValue>(i) / gr::cast<TValue>(count));
         TValue uncertainty   = gr::cast<TValue>(amplitude / gr::cast<TValue>(10));
         ds.signal_values[i]  = detail::initialize<T>(gr::cast<TValue>(value), gr::cast<TValue>(uncertainty));
@@ -140,22 +137,21 @@ template<typename T, typename TValue = gr::meta::fundamental_base_value_type_t<T
     }
 
     gr::DataSet<T> ds;
-    ds.signal_names      = {name};
+    ds.signal_names      = {std::pmr::string{name}};
     ds.signal_quantities = {"Amplitude"};
     ds.signal_units      = {""};
     ds.axis_names        = {"Time"};
     ds.axis_units        = {"s"};
-    ds.axis_values.resize(1);
-    ds.axis_values[0].resize(count);
-    ds.signal_values.resize(count);
-    ds.meta_information.resize(1UZ);
-    ds.timing_events.resize(1UZ);
+    ds.axis_values.resize({1, count});
+    ds.signal_values.resize({count});
+    ds.meta_information.resize({1UZ});
+    ds.timing_events.resize({1UZ});
     ds.extents = {static_cast<std::int32_t>(count)};
 
     auto gauss = [](U x, U mu, U sig) -> TValue { return std::exp(-std::pow((TValue(x) - TValue(mu)) / TValue(sig), 2) / U(2)) / (TValue(sig) * std::sqrt(TValue(2) * std::numbers::pi_v<TValue>)); };
 
     for (std::size_t i = 0; i < count; ++i) {
-        ds.axis_values[0][i] = static_cast<TValue>(i);
+        ds.axis_values[0, i] = static_cast<TValue>(i);
         const TValue val     = gauss(static_cast<U>(i), U(mean), U(sigma)) * TValue(amplitude) + TValue(offset);
         ds.signal_values[i]  = detail::initialize<T>(val, TValue(amplitude) / TValue(10));
     }
@@ -176,20 +172,19 @@ template<typename T, typename TValue = gr::meta::fundamental_base_value_type_t<T
     }
 
     gr::DataSet<T> ds;
-    ds.signal_names      = {name};
+    ds.signal_names      = {std::pmr::string{name}};
     ds.signal_quantities = {"Amplitude"};
     ds.signal_units      = {""};
     ds.axis_names        = {"Time"};
     ds.axis_units        = {"s"};
-    ds.axis_values.resize(1);
-    ds.axis_values[0].resize(count);
-    ds.signal_values.resize(count);
-    ds.meta_information.resize(1);
-    ds.timing_events.resize(1);
+    ds.axis_values.resize({1, count});
+    ds.signal_values.resize({count});
+    ds.meta_information.resize({1});
+    ds.timing_events.resize({1});
     ds.extents = {static_cast<std::int32_t>(count)};
 
     for (std::size_t i = 0; i < count; ++i) {
-        ds.axis_values[0][i] = static_cast<TValue>(i);
+        ds.axis_values[0, i] = static_cast<TValue>(i);
         TValue val           = static_cast<TValue>(i < stepAt ? 0.0 : 1.0);
         ds.signal_values[i]  = detail::initialize<T>(static_cast<TValue>(val), static_cast<TValue>(1) / static_cast<TValue>(10));
     }
@@ -206,16 +201,15 @@ template<typename T, typename TValue = gr::meta::fundamental_base_value_type_t<T
     }
 
     gr::DataSet<T> ds;
-    ds.signal_names      = {name};
+    ds.signal_names      = {std::pmr::string{name}};
     ds.signal_quantities = {"Amplitude"};
     ds.signal_units      = {""};
     ds.axis_names        = {"Time"};
     ds.axis_units        = {"s"};
-    ds.axis_values.resize(1);
-    ds.axis_values[0].resize(count);
-    ds.signal_values.resize(count);
-    ds.meta_information.resize(1);
-    ds.timing_events.resize(1);
+    ds.axis_values.resize({1, count});
+    ds.signal_values.resize({count});
+    ds.meta_information.resize({1});
+    ds.timing_events.resize({1});
     ds.extents = {static_cast<std::int32_t>(count)};
 
     std::random_device                         rd;
@@ -224,7 +218,7 @@ template<typename T, typename TValue = gr::meta::fundamental_base_value_type_t<T
     std::size_t                                step = dist(rng);
 
     for (std::size_t i = 0; i < count; ++i) {
-        ds.axis_values[0][i] = static_cast<TValue>(i);
+        ds.axis_values[0, i] = static_cast<TValue>(i);
         TValue val           = static_cast<TValue>(i < step ? 0.0 : 1.0);
         ds.signal_values[i]  = detail::initialize<T>(static_cast<TValue>(val), static_cast<TValue>(1) / static_cast<TValue>(10));
     }

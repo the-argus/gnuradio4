@@ -23,7 +23,7 @@ constexpr auto SignalTypeList = magic_enum::enum_values<SignalType>();
 
 template<typename T>
 requires std::is_same_v<T, SignalType> || std::is_same_v<T, ParameterType>
-constexpr std::pmr::string toString(T type) {
+std::pmr::string toString(T type) {
     return std::pmr::string(magic_enum::enum_name(type));
 }
 

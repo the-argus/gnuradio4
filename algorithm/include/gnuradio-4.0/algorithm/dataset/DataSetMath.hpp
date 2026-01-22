@@ -74,9 +74,9 @@ template<typename T, typename TValue = gr::meta::fundamental_base_value_type_t<T
 
     std::size_t dataCount = 0U;
     if (!ret.axis_values.empty()) {
-        dataCount = ret.axis_values[0].size();
+        dataCount = ret.axis_values.extent(1);
     }
-    ret.signal_values.resize(dataCount);
+    ret.signal_values.resize({dataCount});
 
     bool needsInterpolation = !sameHorizontalBase(ds1, ds2);
 

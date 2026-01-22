@@ -1299,7 +1299,7 @@ concept TagPredicate = requires(const T& t, const Tag& tag, std::size_t readPosi
     { t(tag, readPosition) } -> std::convertible_to<bool>;
 };
 inline constexpr TagPredicate auto defaultTagMatcher    = [](const Tag& tag, std::size_t readPosition) noexcept { return tag.index >= readPosition; };
-inline constexpr TagPredicate auto defaultEOSTagMatcher = [](const Tag& tag, std::size_t readPosition) noexcept {
+inline constexpr TagPredicate auto defaultEOSTagMatcher = [](const Tag& tag, std::size_t readPosition) noexcept -> bool {
     if (tag.index < readPosition) {
         return false;
     }

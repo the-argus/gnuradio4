@@ -182,8 +182,7 @@ On the choice of window (mathematically aka. apodisation) functions
         // define x-axis (N.B. only one dependent axis <-> nSignals x 1D DataSets)
         ds.axis_names = {"Frequency"};
         ds.axis_units = {"Hz"};
-        ds.axis_values.resize(ds.nDimensions());
-        ds.axis_values[0UZ].resize(N);
+        ds.axis_values.resize({ds.nDimensions(), N}); // only the first column needs to be N length yet, but Tensor enforces uniform column lengths
 
         auto const freqWidth = static_cast<value_type>(sample_rate) / static_cast<value_type>(fftSize);
         if constexpr (gr::meta::complex_like<T>) { // complex-valued FFT output: symmetric spectrum [-fs/2, +fs/2]
@@ -194,15 +193,23 @@ On the choice of window (mathematically aka. apodisation) functions
         }
 
         // define nSignals and allocate the required storage space
-        ds.signal_names      = {std::format("Magnitude({})", signal_name), std::format("Phase({})", signal_name), std::format("Re(FFT({}))", signal_name), std::format("Im(FFT({}))", signal_name)};
+        ds.signal_names = {
+            std::pmr::string{std::format("Magnitude({})", signal_name)},
+            std::pmr::string{std::format("Phase({})", signal_name)},
+            std::pmr::string{std::format("Re(FFT({}))", signal_name)},
+            std::pmr::string{std::format("Im(FFT({}))", signal_name)},
+        };
         ds.signal_quantities = {"Magnitude(FFT)", "Phase(FFT)", "Re(FFT)", "Im(FFT)"};
-        ds.signal_units      = {std::format("{}/√Hz", signal_unit), "rad", std::format("Re{}", signal_unit) /* real part */, std::format("Im{}", signal_unit) /* imaginary part */};
+        ds.signal_units      = {std::pmr::string{std::format("{}/√Hz", signal_unit)}, std::pmr::string{"rad"}, std::pmr::string{std::format("Re{}", signal_unit)} /* real part */,
+                 std::pmr::string{
+                std::format("Im{}", signal_unit),
+            } /* imaginary part */};
         assert(ds.signal_names.size() == nSignals);
         assert(ds.signal_quantities.size() == nSignals);
         assert(ds.signal_units.size() == nSignals);
 
-        ds.signal_values.resize(nSignals * N);
-        ds.signal_ranges.resize(nSignals);
+        ds.signal_values.resize({nSignals * N});
+        ds.signal_ranges.resize({nSignals});
 
         assert(_magnitudeSpectrum.size() == ds.signalValues(0UZ).size());
         std::copy_n(_magnitudeSpectrum.begin(), N, ds.signalValues(0UZ).begin());
@@ -238,12 +245,12 @@ On the choice of window (mathematically aka. apodisation) functions
             {std::pmr::string("output_chunk_size"), gr::pmt::Value(this->output_chunk_size)}, //
             {std::pmr::string("stride"), gr::pmt::Value(this->stride)}};
 
-        ds.meta_information.resize(nSignals);
+        ds.meta_information.resize({nSignals});
         for (std::size_t i = 0UZ; i < nSignals; i++) {
             ds.meta_information[i] = meta_info;
         }
 
-        ds.timing_events.resize(nSignals);
+        ds.timing_events.resize({nSignals});
         // TODO: propagation of timing events is missing
 
         return ds;

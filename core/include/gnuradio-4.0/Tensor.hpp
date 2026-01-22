@@ -342,7 +342,7 @@ struct TensorBase {
 
     void resize(std::initializer_list<std::size_t> new_extents, const T& value = {}) { resize(std::span(new_extents), value); }
 
-    template<std::ranges::range Range>
+    template<std::ranges::contiguous_range Range>
     requires std::same_as<std::ranges::range_value_t<Range>, std::size_t>
     void resize(const Range& newExtents, const T& value = {}) {
         if (std::ranges::empty(newExtents)) { // clear tensor
@@ -350,7 +350,17 @@ struct TensorBase {
             return;
         }
 
-        _metaInfo.rank       = std::ranges::size(newExtents);
+        const auto newRank = std::ranges::size(newExtents);
+        if constexpr (requires { _metaInfo.rank = newRank; }) {
+            _metaInfo.rank       = newRank;
+        } else {
+            static_assert(!std::is_same_v<extents_store_t, dynamic_extents_store>, "Compiling a runtime error into path for changing the rank of a tensor which should support that operation.");
+            // rank is part of the type, it can't be changed
+            if (newRank != _metaInfo.rank) {
+                throw std::runtime_error("Attempt to change rank of tensor whose rank is determined statically");
+            }
+        }
+
         std::size_t new_size = product(std::span(newExtents.begin(), newExtents.end()));
         std::ranges::copy_n(std::ranges::begin(newExtents), static_cast<std::ptrdiff_t>(_metaInfo.rank), _metaInfo.extents.begin());
         recomputeStrides();

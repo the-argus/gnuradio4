@@ -191,7 +191,7 @@ DataSet<T> waveform(WaveType waveType, size_t length, T samplingRate, T frequenc
     dataSet.signal_values.reserve(length);
     dataSet.signal_ranges.push_back({0, 1}); // placeholder for min/max values
     dataSet.meta_information.resize(1);
-    dataSet.timing_events.resize(1); // resizing to have one set of timing events
+    dataSet.timing_events.resize({1}); // resizing to have one set of timing events
 
     T dt            = T(1) / samplingRate; // time step
     T previousValue = offset * amplitude * ((waveType == WaveType::Sine) ? std::sin(T(0)) : std::cos(T(0)));

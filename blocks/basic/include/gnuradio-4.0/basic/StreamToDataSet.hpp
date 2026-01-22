@@ -241,7 +241,7 @@ If multiple 'start' or 'stop' Tags arrive in a single merged tag, only one DataS
                     // no need to check for n_max here: n_pre + n_post <= n_max
                     const std::size_t nPreSamplesToCopy = std::min(static_cast<std::size_t>(n_pre.value), _history.size()); // partially write pre samples if not enough samples stored in HistoryBuffer
                     const auto        historyEnd        = std::next(_history.cbegin(), static_cast<std::ptrdiff_t>(nPreSamplesToCopy));
-                    ds.signal_values.insert(ds.signal_values.end(), std::make_reverse_iterator(historyEnd), std::make_reverse_iterator(_history.cbegin()));
+                    std::ranges::copy(std::make_reverse_iterator(historyEnd), std::make_reverse_iterator(_history.cbegin()), std::back_inserter(ds.signal_values));
                     fillAxisValues(ds, -static_cast<int>(nPreSamplesToCopy), nPreSamplesToCopy);
                     accState.isPreActive = false;
                     accState.nPreSamples = nPreSamplesToCopy;
@@ -252,14 +252,15 @@ If multiple 'start' or 'stop' Tags arrive in a single merged tag, only one DataS
                 if (n_max.value == 0UZ || ds.signal_values.size() < n_max.value) { // Add tags only if the DataSet is not full
                     const Tag& mergedTag = this->mergedInputTag();
                     if (!ds.timing_events.empty() && !mergedTag.map.empty() && accState.isActive) {
-                        ds.timing_events[0].emplace_back(static_cast<std::ptrdiff_t>(ds.signal_values.size()), mergedTag.map);
+                        ds.timing_events.resize_dim(0, ds.timing_events.extent(0) + 1);
+                        ds.timing_events[0, 0] = {static_cast<std::ptrdiff_t>(ds.signal_values.size()), mergedTag.map};
                     }
                 }
 
                 if (!accState.isPostActive) { // normal data accumulation
                     const std::size_t nSamplesToCopy = n_max.value == 0UZ ? inSamples.size() : std::min(n_max.value - ds.signal_values.size(), inSamples.size());
                     if (nSamplesToCopy > 0) {
-                        ds.signal_values.insert(ds.signal_values.end(), inSamples.begin(), inSamples.begin() + static_cast<std::ptrdiff_t>(nSamplesToCopy));
+                        std::ranges::copy(inSamples.begin(), inSamples.begin() + static_cast<std::ptrdiff_t>(nSamplesToCopy), std::back_inserter(ds.signal_values));
                         fillAxisValues(ds, static_cast<int>(accState.nSamples - accState.nPreSamples), nSamplesToCopy);
                         accState.nSamples += nSamplesToCopy;
                     }
@@ -267,7 +268,7 @@ If multiple 'start' or 'stop' Tags arrive in a single merged tag, only one DataS
                     const std::size_t nPostSamplesToCopy = n_max.value == 0UZ ? std::min(accState.nPostSamplesRemain, inSamples.size()) : //
                                                                std::min({n_max.value - ds.signal_values.size(), accState.nPostSamplesRemain, inSamples.size()});
                     if (nPostSamplesToCopy > 0) {
-                        ds.signal_values.insert(ds.signal_values.end(), inSamples.begin(), std::next(inSamples.begin(), static_cast<std::ptrdiff_t>(nPostSamplesToCopy)));
+                        std::ranges::copy(inSamples.begin(), std::next(inSamples.begin(), static_cast<std::ptrdiff_t>(nPostSamplesToCopy)), std::back_inserter(ds.signal_values));
                         fillAxisValues(ds, static_cast<int>(accState.nSamples - accState.nPreSamples), nPostSamplesToCopy);
                         accState.updatePostSamples(nPostSamplesToCopy);
                     } else {
@@ -331,29 +332,31 @@ private:
     }
 
     void fillAxisValues(DataSet<T>& ds, int start, std::size_t nSamples) {
-        ds.axis_values[0].reserve(ds.axis_values[0].size() + nSamples);
+        ds.axis_values.reserve(ds.axis_values.size() + nSamples);
         for (int j = 0; j < static_cast<int>(nSamples); j++) {
-            ds.axis_values[0].emplace_back(static_cast<float>(start + j) / sample_rate);
+            const size_t oldSize = ds.axis_values.extent(1);
+            ds.axis_values.resize_dim(1, oldSize + 1);
+            ds.axis_values[0, oldSize] = {static_cast<T>(static_cast<float>(start + j) / sample_rate)};
         }
     }
 
     void initNewDataSet(DataSet<T>& dataSet) const {
         dataSet.axis_names.emplace_back("time");
         dataSet.axis_units.emplace_back("s");
-        dataSet.axis_values.resize(1UZ);
-        dataSet.extents.emplace_back(0); // size of 1-dim data
+        dataSet.axis_values.resize({1UZ, 0UZ}); // one row (data set), empty at first
+        dataSet.extents.emplace_back(0);        // size of 1-dim data
 
         dataSet.signal_names.emplace_back(signal_name);
         dataSet.signal_quantities.emplace_back(signal_quantity);
         dataSet.signal_units.emplace_back(signal_unit);
-        dataSet.signal_ranges.resize(1UZ);  // one data set
-        dataSet.meta_information.resize(1); // one data set
+        dataSet.signal_ranges.resize({1UZ});  // one data set
+        dataSet.meta_information.resize({1}); // one data set
         dataSet.meta_information[0]["ctx"]    = pmt::Value(filter.value);
         dataSet.meta_information[0]["n_pre"]  = n_pre;
         dataSet.meta_information[0]["n_post"] = n_post;
         dataSet.meta_information[0]["n_max"]  = n_max;
 
-        dataSet.timing_events.resize(1UZ); // one data set
+        dataSet.timing_events.resize({1UZ, 0UZ}); // one row (data set), empty at first
     }
 };
 
