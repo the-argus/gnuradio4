@@ -201,16 +201,7 @@ struct vector<T, true> { // managed vector
                     if constexpr (std::contiguous_iterator<It> && std::is_trivially_copyable_v<T>) {
                         std::memcpy(_data, std::to_address(first), n * sizeof(T));
                     } else {
-
-#if !defined(__clang__) // issue with clang's libc++ std::uninitialized_move as of clang20
                         std::uninitialized_move(first, last, _data);
-#else
-                        if constexpr (detail::iter_yields_nonconst_T_ref<T, decltype(first)> && !std::is_integral_v<T>) {
-                            std::uninitialized_copy(first, last, _data); // only use move for non-integral types where it matters
-                        } else {
-                            std::uninitialized_copy(first, last, _data);
-                        }
-#endif
                     }
                 } else {
                     std::uninitialized_copy(first, last, _data);
@@ -518,15 +509,7 @@ private:
                     std::memcpy(q, _data, _size * sizeof(T));
                     constructed = _size;
                 } else {
-#if !defined(__clang__) // issue with clang's libc++ std::uninitialized_move as of clang20
                     std::uninitialized_move_n(_data, _size, q);
-#else
-                    if constexpr (detail::iter_yields_nonconst_T_ref<T, decltype(_data)> && !std::is_integral_v<T>) {
-                        std::uninitialized_move_n(_data, _size, q); // only use move for non-integral types where it matters
-                    } else {
-                        std::uninitialized_copy_n(_data, _size, q);
-                    }
-#endif
                     constructed = _size;
                 }
             }
